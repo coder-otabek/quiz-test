@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Modern Quiz Platform</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --correct: #22c55e;
+            --wrong: #ef4444;
+            --border: #e2e8f0;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+            --timer-bg: #ffffff;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            --timer-bg: #1e293b;
+        }
+
+        /* MASSHTABNI CSS ORQALI BLOKLASH */
+        html, body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+            touch-action: pan-x pan-y; /* Pinch-zoomni bloklaydi */
+            -webkit-text-size-adjust: 100%;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        header {
+            width: 100%;
+            max-width: 800px;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .header-section { display: flex; align-items: center; gap: 10px; }
+
+        #timer-box {
+            font-size: 1.1rem;
+            font-weight: 700;
+            background: var(--timer-bg);
+            padding: 6px 16px;
+            border-radius: 10px;
+            border: 2px solid var(--border);
+            color: var(--primary);
+            box-shadow: var(--shadow);
+            min-width: 85px;
+            text-align: center;
+        }
+
+        /* Switch Styles */
+        .custom-switch {
+            width: 42px;
+            height: 22px;
+            background: #cbd5e1;
+            border-radius: 20px;
+            position: relative;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .custom-switch.active { background: var(--primary); }
+        .custom-switch::before {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background: white;
+            border-radius: 50%;
+            top: 3px;
+            left: 3px;
+            transition: 0.3s;
+        }
+        .custom-switch.active::before { left: 23px; }
+
+        .theme-switch {
+            position: relative;
+            width: 55px;
+            height: 28px;
+            background: #e2e8f0;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: 0.4s;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 5px;
+            border: 2px solid var(--border);
+        }
+        [data-theme="dark"] .theme-switch { background: #334155; }
+        .theme-switch .ball {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            left: 4px;
+            transition: 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            z-index: 2;
+        }
+        [data-theme="dark"] .theme-switch .ball { left: 27px; }
+
+        .header-text { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+
+        /* Quiz UI */
+        .quiz-container { width: 100%; max-width: 600px; padding: 20px; margin-top: 10px; }
+        .card {
+            background: var(--card-bg);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            display: none;
+            animation: slideUp 0.4s ease;
+        }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        .card.active { display: block; }
+        .question-num { color: var(--primary); font-weight: 800; margin-bottom: 8px; font-size: 0.75rem; letter-spacing: 1px; }
+        .question-text { font-size: 1.2rem; font-weight: 600; line-height: 1.5; margin-bottom: 20px; }
+        .options-list { display: flex; flex-direction: column; gap: 10px; }
+        .option-btn {
+            background: transparent; border: 2px solid var(--border); padding: 14px 18px; border-radius: 14px;
+            text-align: left; cursor: pointer; font-size: 1rem; color: var(--text-main); transition: 0.2s; font-weight: 500;
+            width: 100%;
+        }
+        .option-btn:hover:not(:disabled) { border-color: var(--primary); background: rgba(99, 102, 241, 0.05); }
+        .option-btn.correct { background: var(--correct) !important; border-color: var(--correct) !important; color: white; }
+        .option-btn.wrong { background: var(--wrong) !important; border-color: var(--wrong) !important; color: white; }
+
+        .footer-nav { width: 100%; max-width: 600px; padding: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .nav-btn { padding: 12px 22px; border-radius: 12px; border: none; background: var(--primary); color: white; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .nav-btn:disabled { background: #cbd5e1; cursor: not-allowed; opacity: 0.6; }
+        #progress { font-weight: 700; color: var(--text-muted); font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-section">
+        <div class="custom-switch" id="timer-toggle-btn" onclick="toggleTimer()"></div>
+        <span class="header-text">Taymer</span>
+    </div>
+
+    <div class="header-section">
+        <div class="custom-switch" id="auto-next-btn" onclick="toggleAutoNext()"></div>
+        <span class="header-text">Auto</span>
+    </div>
+
+    <div id="timer-box">01:00</div>
+
+    <div class="header-section">
+        <div class="theme-switch" id="theme-toggle" onclick="toggleTheme()">
+            <span>☀️</span>
+            <div class="ball"></div>
+            <span>🌙</span>
+        </div>
+    </div>
+</header>
+
+<div class="quiz-container" id="quiz-wrapper"></div>
+
+<div class="footer-nav">
+    <button class="nav-btn" id="prev-btn" onclick="move(-1)">Orqaga</button>
+    <div id="progress">0 / 0</div>
+    <button class="nav-btn" id="next-btn" onclick="move(1)">Keyingisi</button>
+</div>
+
+<script>
+    // MASSHTABNI JS BILAN TEMIR QULFGA SOLISH
+    document.addEventListener('wheel', (e) => { if (e.ctrlKey) e.preventDefault(); }, { passive: false });
+    document.addEventListener('keydown', (e) => {
+        if (e.ctrlKey && (e.key === '+' || e.key === '-' || e.key === '=' || e.key === '0')) e.preventDefault();
+    });
+    document.addEventListener('touchstart', (e) => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
+
+    let rawStr = `{{ questions_raw|safe }}`;
+    let questions = [];
+    try { questions = JSON.parse(rawStr.replace(/'/g, '"')); } catch(e) {
+        try { questions = eval(rawStr); } catch(err) { console.error("Data error"); }
+    }
+
+    let currentIdx = 0;
+    let timer;
+    let timeLeft = 60;
+    let timerActive = false;
+    let autoNextActive = false;
+
+    function toggleTheme() {
+        const body = document.body;
+        const newTheme = body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        body.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+    }
+    if (localStorage.getItem('theme') === 'dark') document.body.setAttribute('data-theme', 'dark');
+
+    function toggleTimer() {
+        timerActive = !timerActive;
+        document.getElementById('timer-toggle-btn').classList.toggle('active');
+        if (timerActive) startTimer(); else { clearInterval(timer); document.getElementById('timer-box').innerText = "01:00"; }
+    }
+
+    function toggleAutoNext() {
+        autoNextActive = !autoNextActive;
+        document.getElementById('auto-next-btn').classList.toggle('active');
+    }
+
+    function startTimer() {
+        if (!timerActive) return;
+        clearInterval(timer);
+        timeLeft = 60;
+        document.getElementById('timer-box').innerText = "01:00";
+        timer = setInterval(() => {
+            timeLeft--;
+            let s = timeLeft % 60;
+            document.getElementById('timer-box').innerText = `00:${s < 10 ? '0'+s : s}`;
+            if (timeLeft <= 0) {
+                clearInterval(timer);
+                alert("Vaqt tugadi!");
+                if(currentIdx < questions.length - 1) move(1);
+            }
+        }, 1000);
+    }
+
+    function init() {
+        const wrapper = document.getElementById('quiz-wrapper');
+        if (!questions.length) {
+            wrapper.innerHTML = "<div class='card active'><h2>Savollar topilmadi.</h2></div>";
+            return;
+        }
+        questions.forEach((data, i) => {
+            const card = document.createElement('div');
+            card.className = `card ${i === 0 ? 'active' : ''}`;
+            card.innerHTML = `
+                <div class="question-num">SAVOL ${i + 1}</div>
+                <div class="question-text">${data.q}</div>
+                <div class="options-list">
+                    ${data.options.map((opt, idx) => `
+                        <button class="option-btn" onclick="checkAnswer(${i}, ${idx}, this)">${opt}</button>
+                    `).join('')}
+                </div>`;
+            wrapper.appendChild(card);
+        });
+        updateUI();
+    }
+
+    function checkAnswer(qIdx, optIdx, btn) {
+        if (questions[qIdx].answered) return;
+        const correct = questions[qIdx].correct;
+        const allBtns = btn.parentElement.querySelectorAll('.option-btn');
+
+        if (optIdx === correct) {
+            btn.classList.add('correct');
+            if (autoNextActive && currentIdx < questions.length - 1) {
+                setTimeout(() => move(1), 800);
+            }
+        } else {
+            btn.classList.add('wrong');
+            allBtns[correct].classList.add('correct');
+        }
+
+        questions[qIdx].answered = true;
+        allBtns.forEach(b => b.disabled = true);
+    }
+
+    function move(step) {
+        const cards = document.querySelectorAll('.card');
+        if ((currentIdx + step) >= 0 && (currentIdx + step) < questions.length) {
+            cards[currentIdx].classList.remove('active');
+            currentIdx += step;
+            cards[currentIdx].classList.add('active');
+            updateUI();
+            if (timerActive) startTimer();
+        }
+    }
+
+    function updateUI() {
+        document.getElementById('prev-btn').disabled = currentIdx === 0;
+        document.getElementById('next-btn').disabled = currentIdx === questions.length - 1;
+        document.getElementById('progress').innerText = `${currentIdx + 1} / ${questions.length}`;
+    }
+
+    init();
+</script>
+</body>
+</html>
